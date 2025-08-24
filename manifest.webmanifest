@@ -1,1 +1,9 @@
-
+{
+  "name": "Bread Carb & Insulin Calculator",
+  "short_name": "BreadCarbs",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f7fb",
+  "theme_color": "#0f172a"
+}
