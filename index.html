@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bread Carb & Insulin Calculator</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#0f172a" />
+  <style>
+    :root { --gap:14px; --radius:14px; }
+    * { box-sizing: border-box; }
+    body { font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+           margin:0; padding:16px; line-height:1.35; background:#f6f7fb; color:#111; }
+    .container { max-width:720px; margin:0 auto; }
+    h1 { font-size:1.35rem; margin:0 0 6px; }
+    .sub { color:#555; margin-bottom:18px; font-size:.95rem; }
+    .card { background:#fff; border-radius:var(--radius); padding:16px;
+            box-shadow:0 8px 24px rgba(0,0,0,.06); margin-bottom:16px; }
+    .row { display:grid; grid-template-columns:1fr; gap:var(--gap); }
+    @media (min-width:680px){ .row-2{grid-template-columns:1fr 1fr} .row-3{grid-template-columns:1fr 1fr 1fr} }
+    label { display:block; font-weight:600; margin-bottom:6px; }
+    input[type=number]{ width:100%; padding:12px; border:1px solid #dadce1; border-radius:12px; font-size:1rem;
+                        transition:border .15s; background:#fafbff }
+    input[type=number]:focus{ outline:none; border-color:#5b8cff; background:#fff }
+    .muted{ color:#666; font-size:.9rem }
+    .mode-toggle{ display:grid; grid-template-columns:1fr 1fr; gap:8px; background:#eef2ff; padding:6px; border-radius:12px }
+    .mode-btn{ text-align:center; padding:10px 12px; border-radius:10px; font-weight:600; cursor:pointer; user-select:none }
+    .mode-btn.active{ background:#fff; box-shadow:0 1px 0 rgba(0,0,0,.03) }
+    .note{ font-size:.85rem; color:#555 }
+    .kpis{ display:grid; gap:var(--gap) }
+    @media(min-width:680px){ .kpis{ grid-template-columns:1fr 1fr } }
+    .kpi{ border:1px dashed #d3d7e6; padding:14px; border-radius:12px; background:#fbfcff }
+    .kpi h3{ margin:0 0 6px; font-size:1rem }
+    .kpi .big{ font-size:1.4rem; font-weight:800 }
+    .footer{ color:#666; font-size:.85rem; text-align:center; margin-top:8px }
+    .inline{ display:inline-flex; gap:6px; align-items:center; flex-wrap:wrap }
+    .small{ font-size:.9rem }
+    .pill{ background:#0f172a; color:#fff; padding:10px 14px; border-radius:999px; display:inline-block; font-weight:700 }
+    .hr{ height:1px; background:#eceff7; margin:10px 0 }
+    .banner{ background:#e8fff1; border:1px solid #b2f1cc; color:#064b2d; padding:10px 12px; border-radius:12px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🧮 Bread Carb & Insulin Calculator</h1>
+    <div class="sub">Installable. Works offline. Remembers your values.</div>
+
+    <div id="installBanner" class="banner" style="display:none;">
+      <b>Install?</b> Tap this to add to your home screen.
+    </div>
+
+    <div class="card">
+      <div class="row row-2">
+        <div>
+          <label for="carbPer100">Carbs per 100 g</label>
+          <input id="carbPer100" type="number" inputmode="decimal" min="0" step="0.1" value="49" />
+          <div class="note">From the label (e.g., 49 g per 100 g).</div>
+        </div>
+        <div>
+          <label for="slicesEaten">Slices you will eat</label>
+          <input id="slicesEaten" type="number" inputmode="numeric" min="0" step="1" value="2" />
+          <div class="note">Used to compute carbs eaten.</div>
+        </div>
+      </div>
+
+      <div style="height:8px"></div>
+
+      <div class="mode-toggle" role="tablist" aria-label="Input mode">
+        <div id="modeA" class="mode-btn active" role="tab" aria-selected="true">Loaf weight + total slices</div>
+        <div id="modeB" class="mode-btn" role="tab" aria-selected="false">Exact slice weight</div>
+      </div>
+
+      <div id="inputsA" class="row row-2" style="margin-top:12px;">
+        <div>
+          <label for="loafWeight">Loaf weight (g)</label>
+          <input id="loafWeight" type="number" inputmode="decimal" min="0" step="1" value="380" />
+        </div>
+        <div>
+          <label for="totalSlices">Total slices in loaf</label>
+          <input id="totalSlices" type="number" inputmode="numeric" min="1" step="1" value="20" />
+        </div>
+      </div>
+
+      <div id="inputsB" class="row row-2" style="margin-top:12px; display:none;">
+        <div>
+          <label for="sliceWeight">Single slice weight (g)</label>
+          <input id="sliceWeight" type="number" inputmode="decimal" min="0" step="0.1" value="40" />
+        </div>
+        <div>
+          <label class="muted">&nbsp;</label>
+          <div class="note">Enter the actual weight of one slice (or average of a few).</div>
+        </div>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="row row-3">
+        <div>
+          <label for="roundTo">Round to (g)</label>
+          <input id="roundTo" type="number" inputmode="decimal" min="0" step="0.1" value="0.1" />
+          <div class="note">Display rounding (0 = no rounding).</div>
+        </div>
+        <div>
+          <label for="icr">Insulin-to-carb ratio (g per unit)</label>
+          <input id="icr" type="number" inputmode="decimal" min="0" step="0.1" placeholder="e.g., 10" />
+          <div class="note">Optional. Your personal setting (e.g., 10 g/U).</div>
+        </div>
+        <div>
+          <label for="target">Target carbs (optional)</label>
+          <input id="target" type="number" inputmode="decimal" min="0" step="0.1" placeholder="e.g., 45" />
+          <div class="note">Just a helper.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="kpis">
+        <div class="kpi">
+          <h3>Carbs per slice</h3>
+          <div id="carbsPerSlice" class="big">–</div>
+          <div class="note">Based on your inputs above.</div>
+        </div>
+        <div class="kpi">
+          <h3>Total carbs eaten</h3>
+          <div id="carbsEaten" class="big">–</div>
+          <div class="note">For the number of slices you entered.</div>
+        </div>
+      </div>
+      <div class="hr"></div>
+      <div class="row">
+        <div class="kpi">
+          <h3>Estimated insulin (optional)</h3>
+          <div id="insulinUnits" class="big">–</div>
+          <div class="note">Uses your insulin-to-carb ratio (ICR).</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="inline small">
+        <span class="pill">Tip</span>
+        <span>Install via browser menu → <b>Add to Home Screen</b>.</span>
+      </div>
+    </div>
+
+    <div class="footer">v1.1 · Offline after first load</div>
+  </div>
+
+  <script>
+    // Calculator logic
+    (function () {
+      const els = {
+        carbPer100: document.getElementById('carbPer100'),
+        slicesEaten: document.getElementById('slicesEaten'),
+        loafWeight: document.getElementById('loafWeight'),
+        totalSlices: document.getElementById('totalSlices'),
+        sliceWeight: document.getElementById('sliceWeight'),
+        carbsPerSlice: document.getElementById('carbsPerSlice'),
+        carbsEaten: document.getElementById('carbsEaten'),
+        insulinUnits: document.getElementById('insulinUnits'),
+        icr: document.getElementById('icr'),
+        roundTo: document.getElementById('roundTo'),
+        target: document.getElementById('target'),
+        modeA: document.getElementById('modeA'),
+        modeB: document.getElementById('modeB'),
+        inputsA: document.getElementById('inputsA'),
+        inputsB: document.getElementById('inputsB'),
+      };
+
+      const keys = ['carbPer100','slicesEaten','loafWeight','totalSlices','sliceWeight','icr','roundTo','target'];
+      try { keys.forEach(k => {
+        const v = localStorage.getItem('breadcalc_'+k);
+        if (v !== null && v !== '') els[k].value = v;
+      }); } catch(_) {}
+
+      function save() {
+        try {
+          keys.forEach(k => localStorage.setItem('breadcalc_'+k, els[k].value));
+          localStorage.setItem('breadcalc_mode', mode);
+        } catch(_) {}
+      }
+
+      function round(value, step) {
+        const s = parseFloat(step);
+        if (!isFinite(value)) return '–';
+        if (!isFinite(s) || s === 0) return value.toString();
+        return (Math.round(value / s) * s).toFixed((s.toString().split('.')[1]||'').length);
+      }
+
+      let mode = (localStorage.getItem('breadcalc_mode') || 'A');
+      function setMode(m) {
+        mode = m;
+        els.modeA.classList.toggle('active', m === 'A');
+        els.modeB.classList.toggle('active', m === 'B');
+        els.inputsA.style.display = (m === 'A') ? '' : 'none';
+        els.inputsB.style.display = (m === 'B') ? '' : 'none';
+        compute(); save();
+      }
+
+      function compute() {
+        const carbPer100 = parseFloat(els.carbPer100.value);
+        const slicesEaten = parseFloat(els.slicesEaten.value);
+        const icr = parseFloat(els.icr.value);
+        const roundTo = parseFloat(els.roundTo.value);
+        let carbsPerSliceVal = NaN;
+
+        if (mode === 'A') {
+          const loafWeight = parseFloat(els.loafWeight.value);
+          const totalSlices = parseFloat(els.totalSlices.value);
+          if (isFinite(loafWeight) && isFinite(totalSlices) && totalSlices > 0 && isFinite(carbPer100)) {
+            const carbsWholeLoaf = loafWeight * (carbPer100 / 100);
+            carbsPerSliceVal = carbsWholeLoaf / totalSlices;
+          }
+        } else {
+          const sliceWeight = parseFloat(els.sliceWeight.value);
+          if (isFinite(sliceWeight) && isFinite(carbPer100)) {
+            carbsPerSliceVal = sliceWeight * (carbPer100 / 100);
+          }
+        }
+
+        const carbsEatenVal = (isFinite(carbsPerSliceVal) && isFinite(slicesEaten))
+          ? (carbsPerSliceVal * slicesEaten) : NaN;
+
+        const insulinUnitsVal = (isFinite(icr) && icr > 0 && isFinite(carbsEatenVal))
+          ? (carbsEatenVal / icr) : NaN;
+
+        els.carbsPerSlice.textContent = isFinite(carbsPerSliceVal) ? round(carbsPerSliceVal, roundTo) + ' g' : '–';
+        els.carbsEaten.textContent   = isFinite(carbsEatenVal)    ? round(carbsEatenVal, roundTo) + ' g' : '–';
+        els.insulinUnits.textContent = isFinite(insulinUnitsVal)  ? round(insulinUnitsVal, 0.05) + ' U' : '–';
+      }
+
+      [els.carbPer100, els.slicesEaten, els.loafWeight, els.totalSlices,
+       els.sliceWeight, els.icr, els.roundTo, els.target]
+        .forEach(el => el.addEventListener('input', () => { compute(); save(); }));
+
+      els.modeA.addEventListener('click', () => setMode('A'));
+      els.modeB.addEventListener('click', () => setMode('B'));
+
+      setMode(mode === 'B' ? 'B' : 'A');
+      compute();
+    })();
+
+    // Install banner + service worker
+    let deferredPrompt;
+    const banner = document.getElementById('installBanner');
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault(); deferredPrompt = e; if (banner) banner.style.display = 'block';
+    });
+    if (banner) banner.addEventListener('click', async () => {
+      if (!deferredPrompt) return; deferredPrompt.prompt(); await deferredPrompt.userChoice;
+      deferredPrompt = null; banner.style.display = 'none';
+    });
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('service-worker.js'));
+    }
+  </script>
+</body>
+</html>
